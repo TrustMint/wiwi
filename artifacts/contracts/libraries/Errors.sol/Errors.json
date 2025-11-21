@@ -1,0 +1,151 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Errors",
+  "sourceName": "contracts/libraries/Errors.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "AlreadyJuror",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyVoted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CannotBuyOwnListing",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DisputeExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "FeeTooHigh",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "FundsLocked",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InsufficientStake",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InsufficientStock",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidDisputeStatus",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidEscrowStatus",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidJurySize",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidPrice",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidQuantity",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidRating",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ListingNotActive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotArbitrator",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAuthorized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotBuyer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotQualifiedArbitrator",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotSeller",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReviewAlreadySubmitted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReviewWindowClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "SoulboundTransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TokenNotAllowed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TradeNotCompleted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "VotingNotFinished",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x60556032600b8282823980515f1a607314602657634e487b7160e01b5f525f60045260245ffd5b305f52607381538281f3fe730000000000000000000000000000000000000000301460806040525f5ffdfea264697066735822122052b3ef0cf35934c37a4526ab9a4cbbe4cb957d282b072d41471d06f144d737f664736f6c634300081b0033",
+  "deployedBytecode": "0x730000000000000000000000000000000000000000301460806040525f5ffdfea264697066735822122052b3ef0cf35934c37a4526ab9a4cbbe4cb957d282b072d41471d06f144d737f664736f6c634300081b0033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
