@@ -30,7 +30,8 @@ module.exports = {
     },
   },
   etherscan: {
-    // НОВЫЙ ФОРМАТ: единый API ключ для всех сетей
+    // ВАЖНО: Используем ETHERSCAN_API_KEY из вашего .env, 
+    // так как Arbiscan - это инстанс Etherscan.
     apiKey: process.env.ETHERSCAN_API_KEY || "",
     customChains: [
       {

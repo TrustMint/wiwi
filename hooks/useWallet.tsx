@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { User, Badge, Transaction, TokenSymbol, TokenBalances, LoadingStates, ConnectionType, WalletState } from '../types';
 import { BrowserProvider, ethers } from 'ethers';
@@ -10,20 +11,18 @@ declare global {
 }
 
 // --- Configuration ---
-// ВНИМАНИЕ: После деплоя вставь сюда адреса из консоли
-const config = {
-  NETWORK_NAME: 'arbitrumSepolia', // Меняем на тестовую сеть
+// ВНИМАНИЕ: Адреса обновлены согласно вашему деплою
+export const config = {
+  NETWORK_NAME: 'arbitrumSepolia',
   ETHERS_NETWORK: 'arbitrum-sepolia',
-  ALCHEMY_NETWORK: Network.ARB_SEPOLIA, // Меняем на тестовую сеть
-  CHAIN_ID: 421614n, // Chain ID для Arbitrum Sepolia
+  ALCHEMY_NETWORK: Network.ARB_SEPOLIA,
+  CHAIN_ID: 421614n,
   TOKENS: {
-    // Вставь адреса MOCK токенов после деплоя
-    USDC: '0x3FF0b82143f39C0a3239baB0db6bdE88315698A7', // Адрес MockUSDC
-    USDT: '0xdCb4D1EfdcFf9b7A25fCfa13F6a60f95c647B5C9', // Адрес MockUSDT
-    DMT: '0xc545322af3c4E01B72430f05b98e233fAbeD75d7',  // Адрес DeMarketToken
+    USDC: '0x3FF0b82143f39C0a3239baB0db6bdE88315698A7', 
+    USDT: '0xdCb4D1EfdcFf9b7A25fCfa13F6a60f95c647B5C9', 
+    DMT: '0xc545322af3c4E01B72430f05b98e233fAbeD75d7',
   } as const,
-  // Адрес маркетплейса для вызовов (понадобится для demarketService)
-  MARKETPLACE_ADDRESS: '0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b' 
+  MARKETPLACE_ADDRESS: '0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b'
 };
 
 // Using the public 'demo' key. Note: Highly rate-limited.
@@ -212,7 +211,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             try {
                 const tokenAddress = config.TOKENS[tokenSymbol];
                 // Пропускаем если адрес заглушка
-                if (tokenAddress === '0x...') continue; 
+                if ((tokenAddress as string) === '0x...' || !tokenAddress) continue; 
                 
                 const contract = new ethers.Contract(tokenAddress, ERC20_ABI, publicArbitrumProvider);
                 const [balance, decimals] = await Promise.all([contract.balanceOf(userAddress), contract.decimals()]);

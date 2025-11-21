@@ -8,10 +8,8 @@ dataSources:
     name: DeMarketMarketplace
     network: arbitrum-sepolia
     source:
-      # !!! ВСТАВЬТЕ СЮДА АДРЕС КОНТРАКТА DeMarketMarketplace ИЗ ТАБЛИЦЫ !!!
       address: "0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b"
       abi: DeMarketMarketplace
-      # !!! ВСТАВЬТЕ НОМЕР БЛОКА ДЕПЛОЯ !!!
       startBlock: 217562198
     mapping:
       kind: ethereum/events
@@ -44,10 +42,8 @@ dataSources:
     name: ReputationReview
     network: arbitrum-sepolia
     source:
-      # !!! ВСТАВЬТЕ СЮДА АДРЕС КОНТРАКТА ReputationReview ИЗ ТАБЛИЦЫ !!!
       address: "0x02920B983Ce222e2d20eBBA96732fe22ae4F47fb"
       abi: ReputationReview
-      # !!! ВСТАВЬТЕ НОМЕР БЛОКА ДЕПЛОЯ !!!
       startBlock: 217562207
     mapping:
       kind: ethereum/events
@@ -69,10 +65,8 @@ dataSources:
     name: DeMarketDAO
     network: arbitrum-sepolia
     source:
-      # !!! ВСТАВЬТЕ СЮДА АДРЕС КОНТРАКТА DeMarketDAO ИЗ ТАБЛИЦЫ !!!
       address: "0xD746e5eb96FE97aA91587943364cC2e1B3dfE9ED"
       abi: DeMarketDAO
-      # !!! ВСТАВЬТЕ НОМЕР БЛОКА ДЕПЛОЯ !!!
       startBlock: 217562194 
     mapping:
       kind: ethereum/events
