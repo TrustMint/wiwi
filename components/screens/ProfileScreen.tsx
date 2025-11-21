@@ -33,7 +33,8 @@ import {
   TbRocket,
   TbShieldCheck,
   TbCoins,
-  TbBolt
+  TbBolt,
+  TbDatabase
 } from 'react-icons/tb';
 
 interface DateFilterModalContentProps {
@@ -952,6 +953,29 @@ const AboutInfoSection: React.FC<{ icon: React.ReactNode; title: string; childre
     </GlassPanel>
 );
 
+const DebugInfoSection: React.FC = () => {
+    const { tokenBalances } = useWallet();
+    
+    // Safe access to ENV
+    const marketplaceAddress = typeof process !== 'undefined' && process.env ? '0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b' : 'Unknown';
+    const subgraphUrl = typeof process !== 'undefined' && process.env?.VITE_SUBGRAPH_URL ? process.env.VITE_SUBGRAPH_URL : 'Unknown';
+
+    return (
+        <GlassPanel className="p-4 border-t border-yellow-500/30">
+            <div className="flex items-center mb-3">
+                <div className="mr-3 text-yellow-400"><TbDatabase size={24}/></div>
+                <h3 className="text-xl font-semibold text-white">Debug Info</h3>
+            </div>
+            <div className="text-xs text-gray-400 font-mono space-y-2 break-all">
+                <p><strong className="text-gray-300">Network:</strong> Arbitrum Sepolia</p>
+                <p><strong className="text-gray-300">Marketplace:</strong> {marketplaceAddress}</p>
+                <p><strong className="text-gray-300">Subgraph:</strong> {subgraphUrl.substring(0, 30)}...</p>
+                <p><strong className="text-gray-300">USDC Balance:</strong> {tokenBalances.USDC}</p>
+            </div>
+        </GlassPanel>
+    );
+};
+
 export const AboutScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     return (
         <div className="h-full bg-black flex flex-col">
@@ -974,6 +998,8 @@ export const AboutScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                  <AboutInfoSection icon={<TbBolt size={24} className="text-purple-400"/>} title="Уникальность">
                     <p>Ваша репутация и история сделок навсегда записаны в блокчейн.</p>
                 </AboutInfoSection>
+                
+                <DebugInfoSection />
             </main>
         </div>
     );
