@@ -10,7 +10,7 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
-      // ВАЖНО: OpenZeppelin 5.1+ использует mcopy, который доступен только в Cancun
+      // ВАЖНО: OpenZeppelin 5.x использует инструкции EVM (mcopy), доступные только в Cancun
       evmVersion: "cancun", 
     },
   },
@@ -30,8 +30,7 @@ module.exports = {
     },
   },
   etherscan: {
-    // ВАЖНО: Используем ETHERSCAN_API_KEY из вашего .env, 
-    // так как Arbiscan - это инстанс Etherscan.
+    // ВАЖНО: Используем переменную ETHERSCAN_API_KEY, как в вашем .env
     apiKey: process.env.ETHERSCAN_API_KEY || "",
     customChains: [
       {

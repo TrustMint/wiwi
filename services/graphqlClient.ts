@@ -1,11 +1,13 @@
+import { ApolloClient, InMemoryCache, gql, HttpLink } from '@apollo/client';
 
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
+const SUBGRAPH_URL = import.meta.env.VITE_SUBGRAPH_URL || 'https://api.studio.thegraph.com/query/1716048/demarket-sepolia/v0.0.1';
 
-// !!! ВСТАВЬТЕ СЮДА HTTP URL ВАШЕГО СУБГРАФА ИЗ THE GRAPH STUDIO !!!
-const SUBGRAPH_URL = process.env.VITE_SUBGRAPH_URL || 'https://api.studio.thegraph.com/query/YOUR_ID/demarket-sepolia/v0.0.1';
+if (!import.meta.env.VITE_SUBGRAPH_URL) {
+    console.warn("Warning: VITE_SUBGRAPH_URL is not defined. Using default fallback.");
+}
 
 export const graphClient = new ApolloClient({
-  uri: SUBGRAPH_URL,
+  link: new HttpLink({ uri: SUBGRAPH_URL }),
   cache: new InMemoryCache(),
 });
 
@@ -14,13 +16,15 @@ export const GET_ACTIVE_LISTINGS = gql`
     listings(where: { status: "Active" }, orderBy: createdAt, orderDirection: desc) {
       id
       price
-      currency
+      token
+      quantity
       ipfsCid
       createdAt
       seller {
         id
         averageRating
         reputationTier
+        reviewCount
       }
     }
   }
@@ -35,11 +39,25 @@ export const GET_USER_PROFILE = gql`
       averageRating
       reviewCount
       reputationTier
-      listings(where: { status: "Active" }) {
+      listings(orderBy: createdAt, orderDirection: desc) {
         id
         price
-        currency
+        token
+        status
         ipfsCid
+        createdAt
+      }
+      purchases(orderBy: createdAt, orderDirection: desc) {
+        id
+        status
+        amount
+        listing {
+          id
+          ipfsCid
+          seller {
+            id
+          }
+        }
       }
     }
   }

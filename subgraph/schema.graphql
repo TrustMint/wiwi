@@ -159,7 +159,7 @@ type Dispute @entity(immutable: false) {
 
 """
 Отзыв о сделке.
-Отзывы обычно неизменны, поэтому immutable: true.
+Отзывы обычно неизменны после создания.
 """
 type Review @entity(immutable: true) {
   "Уникальный ID (хэш транзакции + индекс)"
@@ -222,9 +222,9 @@ type Proposal @entity(immutable: false) {
 
 """
 Голос пользователя в DAO.
-Голос обычно окончателен в рамках одной транзакции, ставим immutable: true для оптимизации.
+Ставим immutable: false, чтобы позволить пользователям менять голос до окончания голосования без ошибок индексации.
 """
-type Vote @entity(immutable: true) {
+type Vote @entity(immutable: false) {
   "ID голоса (Proposal ID + Voter Address)"
   id: ID!
 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { User, Badge, Transaction, TokenSymbol, TokenBalances, LoadingStates, ConnectionType, WalletState } from '../types';
 import { BrowserProvider, ethers } from 'ethers';
@@ -11,27 +10,25 @@ declare global {
 }
 
 // --- Configuration ---
-// ВНИМАНИЕ: Адреса обновлены согласно вашему деплою
 export const config = {
   NETWORK_NAME: 'arbitrumSepolia',
   ETHERS_NETWORK: 'arbitrum-sepolia',
   ALCHEMY_NETWORK: Network.ARB_SEPOLIA,
   CHAIN_ID: 421614n,
   TOKENS: {
-    USDC: '0x3FF0b82143f39C0a3239baB0db6bdE88315698A7', 
-    USDT: '0xdCb4D1EfdcFf9b7A25fCfa13F6a60f95c647B5C9', 
-    DMT: '0xc545322af3c4E01B72430f05b98e233fAbeD75d7',
+    USDC: import.meta.env.VITE_CONTRACT_USDC || '0x3FF0b82143f39C0a3239baB0db6bdE88315698A7', 
+    USDT: import.meta.env.VITE_CONTRACT_USDT || '0xdCb4D1EfdcFf9b7A25fCfa13F6a60f95c647B5C9', 
+    DMT: import.meta.env.VITE_CONTRACT_DMT || '0xc545322af3c4E01B72430f05b98e233fAbeD75d7',
   } as const,
-  MARKETPLACE_ADDRESS: '0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b'
+  MARKETPLACE_ADDRESS: import.meta.env.VITE_CONTRACT_MARKETPLACE || '0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b'
 };
 
 // Using the public 'demo' key. Note: Highly rate-limited.
 const alchemy = new Alchemy({
-    apiKey: "demo", // В продакшене замени на свой ключ
+    apiKey: "demo", 
     network: config.ALCHEMY_NETWORK,
 });
 
-// Публичный RPC для чтения данных без кошелька
 const publicArbitrumProvider = new ethers.JsonRpcProvider("https://sepolia-rollup.arbitrum.io/rpc");
 
 const ERC20_ABI = [
@@ -41,14 +38,13 @@ const ERC20_ABI = [
   "function allowance(address owner, address spender) view returns (uint256)"
 ];
 
-// ... (rest of the file remains unchanged)
 const STORAGE_KEY = 'demarket_session_v1';
 
 interface StoredSession {
     address: string;
     connectionType: ConnectionType;
     location?: { country: string; region?: string; city: string };
-    email?: string; // only for sca
+    email?: string;
 }
 
 const simulateWaaSLogin = async (socialProvider: 'google' | 'apple'): Promise<{ address: string, email: string }> => {
@@ -97,7 +93,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (isMounted.current) setLoading(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  // --- HELPER: Create User Object ---
   const createUserObject = useCallback((address: string, type: ConnectionType, email?: string, location?: { country: string; region?: string; city: string }): User => {
     const rating = type === 'eoa' ? 98 : 100;
     const reviews = type === 'eoa' ? 15 : 0;
@@ -112,7 +107,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         rating,
         reviews,
         memberSince: new Date().getFullYear(),
-        location: location, // Hydrate location if available
+        location: location,
         dmtBalance: type === 'eoa' ? 1000 : 500,
         stake: type === 'eoa' ? 250 : 0,
         lockedStake: type === 'eoa' ? 50 : 0,
@@ -128,17 +123,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
-  // --- PERSISTENCE: Restore Session ---
   useEffect(() => {
       const restoreSession = async () => {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
               try {
                   const session: StoredSession = JSON.parse(stored);
-                  console.log('Restoring session for:', session.address);
-                  
                   if (session.connectionType === 'eoa' && window.ethereum) {
-                      // For EOA, we verify if the user is still connected in MetaMask
                       const browserProvider = new BrowserProvider(window.ethereum, 'any');
                       const accounts = await browserProvider.listAccounts();
                       if (accounts.length > 0 && accounts[0].address.toLowerCase() === session.address.toLowerCase()) {
@@ -147,10 +138,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                           setUser(restoredUser);
                           setConnectionType('eoa');
                       } else {
-                          localStorage.removeItem(STORAGE_KEY); // Session invalid
+                          localStorage.removeItem(STORAGE_KEY);
                       }
                   } else if (session.connectionType === 'sca') {
-                      // For SCA/Social, we trust the stored token (simulated)
                       const restoredUser = createUserObject(session.address, 'sca', session.email, session.location);
                       setUser(restoredUser);
                       setConnectionType('sca');
@@ -166,7 +156,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       restoreSession();
   }, [createUserObject, setLoadingState]);
 
-  // --- PERSISTENCE: Save Session ---
   const saveSession = useCallback((user: User, type: ConnectionType, email?: string) => {
       const session: StoredSession = {
           address: user.address,
@@ -177,11 +166,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   }, []);
 
-
   const clearError = useCallback(() => setError(null), []);
 
   const disconnectWallet = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY); // Clear persistence
+    localStorage.removeItem(STORAGE_KEY);
     setUser(null);
     setProvider(null);
     setConnectionType(null);
@@ -210,8 +198,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         for (const tokenSymbol of Object.keys(config.TOKENS) as TokenSymbol[]) {
             try {
                 const tokenAddress = config.TOKENS[tokenSymbol];
-                // Пропускаем если адрес заглушка
-                if ((tokenAddress as string) === '0x...' || !tokenAddress) continue; 
+                if (!tokenAddress || tokenAddress === '0x...') continue; 
                 
                 const contract = new ethers.Contract(tokenAddress, ERC20_ABI, publicArbitrumProvider);
                 const [balance, decimals] = await Promise.all([contract.balanceOf(userAddress), contract.decimals()]);
@@ -266,8 +253,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const switchToArbitrum = async () => {
     if (!window.ethereum) return;
     try {
-      // Переключение на Arbitrum Sepolia
-      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x66eee' }] }); // 421614
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x66eee' }] }); 
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         await window.ethereum.request({
@@ -301,7 +287,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const connectedUser = createUserObject(address, 'eoa');
       setUser(connectedUser);
       setConnectionType('eoa');
-      saveSession(connectedUser, 'eoa'); // Save
+      saveSession(connectedUser, 'eoa');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось подключить кошелек');
       disconnectWallet();
@@ -317,7 +303,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setUser(scaUser);
         setConnectionType('sca');
         setProvider(null);
-        saveSession(scaUser, 'sca', email); // Save
+        saveSession(scaUser, 'sca', email);
     } catch (err) {
         setError('Не удалось войти через соцсети');
         disconnectWallet();
@@ -378,7 +364,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setUser(u => {
         if(!u) return null;
         const updatedUser = { ...u, location };
-        // Persist updated location immediately
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
             try {
@@ -388,9 +373,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             } catch (e) {
                 console.error("Failed to persist location update", e);
             }
-        } else {
-            // Edge case: Session key missing, try to re-save the whole user if possible or just skip
-            // For robustness in 'pendingAction' flow, user should be logged in so STORAGE_KEY exists.
         }
         return updatedUser;
     });
