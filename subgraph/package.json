@@ -1,0 +1,20 @@
+
+{
+  "name": "demarket-subgraph",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ demarket-dao/demarket-arbitrum",
+    "create-local": "graph create --node http://localhost:8020/ demarket-dao/demarket-arbitrum",
+    "remove-local": "graph remove --node http://localhost:8020/ demarket-dao/demarket-arbitrum",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 demarket-dao/demarket-arbitrum"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-ts": "^0.32.0"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.81.0",
+    "matchstick-as": "0.6.0"
+  }
+}

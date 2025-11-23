@@ -1,0 +1,319 @@
+"""
+Перечисление статусов объявления
+"""
+enum ListingStatus {
+  Active
+  InEscrow
+  Sold
+  Cancelled
+}
+
+"""
+Перечисление статусов сделки (Escrow)
+"""
+enum PurchaseStatus {
+  Funded
+  Completed
+  Disputed
+  Refunded
+  Resolved
+}
+
+"""
+Перечисление статусов спора
+"""
+enum DisputeStatus {
+  Recruiting
+  Voting
+  Resolved
+}
+
+"""
+Перечисление уровней репутации (баджи)
+"""
+enum ReputationTier {
+  None
+  Bronze
+  Silver
+  Gold
+}
+
+"""
+Перечисление статусов предложений DAO
+"""
+enum ProposalStatus {
+  Active
+  Passed
+  Failed
+  Executed
+}
+
+"""
+Сущность пользователя.
+Центральный узел графа. Содержит всю статистику и связи.
+"""
+type User @entity(immutable: false) {
+  "Адрес кошелька (ключ)"
+  id: ID!
+  
+  "Общее количество продаж"
+  totalSales: Int!
+  
+  "Общее количество покупок"
+  totalPurchases: Int!
+  
+  "Общий объем продаж в USDC (wei)"
+  totalVolumeUSDC: BigInt!
+  
+  "Средний рейтинг (0-100)"
+  averageRating: BigDecimal!
+  
+  "Количество полученных отзывов"
+  reviewCount: Int!
+  
+  "Текущий уровень репутации"
+  reputationTier: ReputationTier!
+  
+  "Количество положительных отзывов (рейтинг >= 50)"
+  goodReviewsCount: Int!
+  
+  "Количество отрицательных отзывов (рейтинг < 50)"
+  badReviewsCount: Int!
+  
+  "Среднее время отправки товара (в секундах)"
+  avgPaymentTime: BigDecimal!
+  
+  "Среднее время подтверждения получения (в секундах)"
+  avgTransferTime: BigDecimal!
+  
+  "Дата регистрации (первое взаимодействие)"
+  joinedAt: BigInt!
+  
+  "Дата создания записи в графе"
+  createdAt: BigInt!
+  
+  "Дата первой успешной сделки"
+  firstDealAt: BigInt!
+
+  "Объявления, созданные пользователем"
+  listings: [Listing!]! @derivedFrom(field: "seller")
+  
+  "Покупки пользователя"
+  purchases: [Purchase!]! @derivedFrom(field: "buyer")
+  
+  "Продажи пользователя"
+  sales: [Purchase!]! @derivedFrom(field: "seller")
+  
+  "Отзывы, написанные пользователем"
+  reviewsWritten: [Review!]! @derivedFrom(field: "reviewer")
+  
+  "Отзывы, полученные пользователем"
+  reviewsReceived: [Review!]! @derivedFrom(field: "reviewedUser")
+  
+  "Голоса в DAO"
+  votes: [Vote!]! @derivedFrom(field: "voter")
+}
+
+"""
+Объявление о товаре или услуге
+"""
+type Listing @entity(immutable: false) {
+  id: ID!
+  
+  "Продавец"
+  seller: User!
+  
+  "Покупатель (если есть активная сделка или продано)"
+  buyer: User
+  
+  "Адрес токена оплаты (USDC/USDT)"
+  token: Bytes!
+  
+  "Цена за единицу (wei)"
+  price: BigInt!
+  
+  "Доступное количество"
+  quantity: BigInt!
+  
+  "Символ валюты (USDC/USDT)"
+  currency: String!
+  
+  "IPFS CID с метаданными (название, фото, описание)"
+  ipfsCid: String!
+  
+  "Текущий статус"
+  status: ListingStatus!
+  
+  "Время создания"
+  createdAt: BigInt!
+  
+  "Время последнего обновления"
+  updatedAt: BigInt!
+  
+  "Поле для полнотекстового поиска (содержит CID)"
+  searchContent: String
+  
+  "Связанные сделки (история покупок этого лота)"
+  purchases: [Purchase!]! @derivedFrom(field: "listing")
+}
+
+"""
+Сделка через Escrow
+"""
+type Purchase @entity(immutable: true) {
+  "ID эскроу"
+  id: ID!
+  
+  "Связанное объявление"
+  listing: Listing!
+  
+  "Покупатель"
+  buyer: User!
+  
+  "Продавец"
+  seller: User!
+  
+  "Сумма сделки (wei)"
+  amount: BigInt!
+  
+  "Токен оплаты"
+  token: Bytes!
+  
+  "Статус сделки"
+  status: PurchaseStatus!
+  
+  "Время создания (блокировки средств)"
+  createdAt: BigInt!
+  
+  "Время завершения"
+  completedAt: BigInt
+  
+  "Связанный спор (если есть)"
+  dispute: Dispute @derivedFrom(field: "purchase")
+  
+  "Связанный отзыв (если есть)"
+  review: Review @derivedFrom(field: "purchase")
+}
+
+"""
+Отзыв о сделке
+"""
+type Review @entity(immutable: true) {
+  id: ID!
+  
+  "Сделка, к которой относится отзыв"
+  purchase: Purchase!
+  
+  "Автор отзыва"
+  reviewer: User!
+  
+  "Получатель отзыва"
+  reviewedUser: User!
+  
+  "Оценка (0-100)"
+  rating: BigInt!
+  
+  "IPFS CID с текстом комментария"
+  commentCid: String!
+  
+  "Время создания"
+  createdAt: BigInt!
+}
+
+"""
+Спор по сделке (Арбитраж)
+"""
+type Dispute @entity(immutable: false) {
+  id: ID!
+  
+  "Спорная сделка"
+  purchase: Purchase!
+  
+  "Кто открыл спор"
+  initiator: User!
+  
+  "IPFS CID с причиной и доказательствами"
+  reasonCid: String!
+  
+  "Статус спора"
+  status: DisputeStatus!
+  
+  "Время открытия"
+  createdAt: BigInt!
+  
+  "Время решения"
+  resolvedAt: BigInt
+  
+  "Победитель спора (кому ушли деньги)"
+  winner: User
+}
+
+"""
+Предложение в DAO (Governance)
+"""
+type Proposal @entity(immutable: false) {
+  id: ID!
+  
+  "Автор предложения"
+  proposer: User!
+  
+  "Описание предложения"
+  description: String!
+  
+  "Статус"
+  status: ProposalStatus!
+  
+  "Голоса ЗА (в токенах GVT/DMT)"
+  votesFor: BigInt!
+  
+  "Голоса ПРОТИВ (в токенах GVT/DMT)"
+  votesAgainst: BigInt!
+  
+  "Блок начала голосования"
+  startBlock: BigInt!
+  
+  "Блок окончания голосования"
+  endBlock: BigInt!
+  
+  "Время создания"
+  createdAt: BigInt!
+  
+  "Все голоса по этому предложению"
+  votes: [Vote!]! @derivedFrom(field: "proposal")
+}
+
+"""
+Голос участника DAO
+"""
+type Vote @entity(immutable: true) {
+  id: ID!
+  
+  "Предложение"
+  proposal: Proposal!
+  
+  "Голосующий"
+  voter: User!
+  
+  "Поддержал (true) или против (false)"
+  support: Boolean!
+  
+  "Вес голоса (количество токенов)"
+  weight: BigInt!
+  
+  "Причина/Комментарий (опционально)"
+  reason: String
+  
+  "Время голосования"
+  timestamp: BigInt!
+}
+
+"""
+Для полнотекстового поиска по объявлениям
+"""
+type _Schema_
+  @fulltext(
+    name: "listingSearch"
+    language: en
+    algorithm: rank
+    include: [{ entity: "Listing", fields: [{ name: "searchContent" }] }]
+  )

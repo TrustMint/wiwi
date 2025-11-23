@@ -1,0 +1,82 @@
+specVersion: 0.0.5
+features:
+  - fullTextSearch
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: DeMarketMarketplace
+    network: arbitrum-sepolia
+    source:
+      address: "0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b"
+      abi: DeMarketMarketplace
+      startBlock: 217562198
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Listing
+        - Purchase
+      abis:
+        - name: DeMarketMarketplace
+          file: DeMarketMarketplace/DeMarketMarketplace.json
+      eventHandlers:
+        - event: ListingCreated(indexed uint256,indexed address,uint256,address,string)
+          handler: handleListingCreated
+        - event: ListingUpdated(indexed uint256,uint256,uint256)
+          handler: handleListingUpdated
+        - event: PurchaseInitiated(indexed uint256,indexed uint256,indexed address,address,uint256)
+          handler: handlePurchaseInitiated
+        - event: PurchaseCompleted(indexed uint256,indexed address,indexed address,uint256)
+          handler: handlePurchaseCompleted
+        - event: DisputeOpened(indexed uint256,indexed address,uint256)
+          handler: handleDisputeOpened
+        - event: DisputeResolved(indexed uint256,indexed address)
+          handler: handleDisputeResolved
+      file: DeMarketMarketplace/DeMarketMarketplace.wasm
+  - kind: ethereum
+    name: ReputationReview
+    network: arbitrum-sepolia
+    source:
+      address: "0x02920B983Ce222e2d20eBBA96732fe22ae4F47fb"
+      abi: ReputationReview
+      startBlock: 217562207
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Review
+        - User
+      abis:
+        - name: ReputationReview
+          file: ReputationReview/ReputationReview.json
+      eventHandlers:
+        - event: ReviewSubmitted(indexed uint256,indexed address,indexed address,uint8,string)
+          handler: handleReviewSubmitted
+      file: DeMarketMarketplace/DeMarketMarketplace.wasm
+  - kind: ethereum
+    name: DeMarketDAO
+    network: arbitrum-sepolia
+    source:
+      address: "0xD746e5eb96FE97aA91587943364cC2e1B3dfE9ED"
+      abi: DeMarketDAO
+      startBlock: 217562194
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Proposal
+        - Vote
+      abis:
+        - name: DeMarketDAO
+          file: DeMarketDAO/DeMarketDAO.json
+      eventHandlers:
+        - event: ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)
+          handler: handleProposalCreated
+        - event: VoteCast(indexed address,uint256,uint8,uint256,string)
+          handler: handleVoteCast
+      file: DeMarketMarketplace/DeMarketMarketplace.wasm

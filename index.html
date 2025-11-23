@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- PWA & Favicon Configuration -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Meta Tags for PWA behavior -->
+    <!-- theme-color removed to prevent conflict with black-translucent status bar style on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DeMarket">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Viewport with viewport-fit=cover for full screen notch support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <title>DeMarket</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+      /* --- Global Reset & Fullscreen Setup --- */
+      :root {
+        --sat: env(safe-area-inset-top);
+        --sab: env(safe-area-inset-bottom);
+        --sal: env(safe-area-inset-left);
+        --sar: env(safe-area-inset-right);
+      }
+
+      html {
+        box-sizing: border-box;
+        -webkit-text-size-adjust: 100%;
+        background-color: #000000;
+        /* Fix for iOS scroll bounce */
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      
+      *, *:before, *:after {
+        box-sizing: inherit;
+        /* Hide scrollbars */
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      *::-webkit-scrollbar {
+        display: none;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        /* Nuclear option for Fullscreen App Feel */
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        
+        overflow: hidden; 
+        overscroll-behavior: none;
+        
+        background-color: #000000;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      #root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+      }
+      
+      /* --- Animation & Transition Classes --- */
+      .main-content {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.3s ease, filter 0.3s ease;
+        will-change: transform, filter;
+      }
+
+      .main-content--pushed {
+        z-index: 5;
+      }
+
+      .pushed-screen-stack {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      .pushed-screen-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        transition: transform 0.3s ease;
+        pointer-events: none;
+        transform: translateX(100%);
+      }
+      
+      .pushed-screen-wrapper--top {
+        transform: translateX(0);
+        pointer-events: auto;
+        box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
+        z-index: 100;
+      }
+
+      .pushed-screen-wrapper--second {
+        transform: translateX(-30px); /* ИСПРАВЛЕНИЕ: небольшое смещение для peek */
+        opacity: 0.7; /* ИСПРАВЛЕНИЕ: полупрозрачность для peek */
+        pointer-events: none;
+        z-index: 90;
+        filter: brightness(0.8); /* ИСПРАВЛЕНИЕ: затемнение для нативного эффекта */
+      }
+
+      .pushed-screen-wrapper--hidden {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .pushed-screen-wrapper--dragging {
+        transition: none;
+      }
+
+      .swipe-back-shadow {
+        position: absolute;
+        top: 0;
+        left: -10px;
+        width: 10px;
+        height: 100%;
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.2), transparent);
+        pointer-events: none;
+        z-index: 1001;
+      }
+
+      /* Helper Utilities */
+      .hyphens-auto {
+        -webkit-hyphens: auto;
+        hyphens: auto;
+      }
+
+      /* Glow Animations */
+      @keyframes glowing-border-yellow {
+        0% { box-shadow: 0 0 3px rgba(250, 204, 21, 0.4); }
+        50% { box-shadow: 0 0 12px rgba(250, 204, 21, 0.8); }
+        100% { box-shadow: 0 0 3px rgba(250, 204, 21, 0.4); }
+      }
+      @keyframes glowing-border-cyan {
+        0% { box-shadow: 0 0 3px rgba(34, 211, 238, 0.4); }
+        50% { box-shadow: 0 0 12px rgba(34, 211, 238, 0.8); }
+        100% { box-shadow: 0 0 3px rgba(34, 211, 238, 0.4); }
+      }
+      .boosted-glow {
+        animation: glowing-border-yellow 2.5s ease-in-out infinite;
+        border: 1px solid rgba(250, 204, 21, 0.5);
+      }
+      .wallet-glow {
+        animation: glowing-border-cyan 2.5s ease-in-out infinite;
+        border: 1px solid rgba(34, 211, 238, 0.5);
+      }
+      .line-clamp-2 {
+         overflow: hidden;
+         display: -webkit-box;
+         -webkit-box-orient: vertical;
+         -webkit-line-clamp: 2;
+      }
+
+      /* --- SplashScreen Styles --- */
+      .splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 1;
+        transform: scale(1);
+        background: #000;
+      }
+      .splash-screen--hidden {
+        opacity: 0;
+        transform: scale(0.95);
+        pointer-events: none;
+      }
+      .splash-screen__blur {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        /* background removed for pure black */
+      }
+      .splash-screen__content {
+        position: relative;
+        z-index: 1;
+      }
+      .splash-screen__icon {
+        width: 128px;
+        height: 128px;
+        animation: pulse-glow 2.5s ease-in-out infinite;
+      }
+      @keyframes pulse-glow {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 0.8;
+          filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.4));
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 1;
+          filter: drop-shadow(0 0 25px rgba(34, 211, 238, 0.7));
+        }
+      }
+    </style>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^18.2.0",
+    "react/": "https://aistudiocdn.com/react@^18.2.0/",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^18.2.0/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^18.2.0/",
+    "date-fns": "https://aistudiocdn.com/date-fns@^3.6.0",
+    "date-fns/": "https://aistudiocdn.com/date-fns@^3.6.0/",
+    "ethers": "https://cdn.jsdelivr.net/npm/ethers@6.7.0/+esm",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "fuse.js": "https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/+esm",
+    "alchemy-sdk": "https://cdn.jsdelivr.net/npm/alchemy-sdk@3.1.2/+esm",
+    "react-icons/lu": "https://esm.sh/react-icons@5.0.1/lu?external=react",
+    "react-icons/tb": "https://esm.sh/react-icons@5.0.1/tb?external=react",
+    "react-icons/": "https://aistudiocdn.com/react-icons@^5.5.0/",
+    "path": "https://aistudiocdn.com/path@^0.12.7",
+    "vite": "https://aistudiocdn.com/vite@^7.2.2",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "axios": "https://aistudiocdn.com/axios@^1.13.2",
+    "formidable": "https://aistudiocdn.com/formidable@^3.5.4",
+    "form-data": "https://aistudiocdn.com/form-data@^4.0.5",
+    "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
+    "@apollo/client": "https://aistudiocdn.com/@apollo/client@^4.0.9",
+    "@graphprotocol/graph-ts": "https://aistudiocdn.com/@graphprotocol/graph-ts@^0.38.2",
+    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.3",
+    "hardhat/": "https://aistudiocdn.com/hardhat@^3.0.15/",
+    "hardhat": "https://aistudiocdn.com/hardhat@^3.0.15",
+    "chai": "https://aistudiocdn.com/chai@^6.2.1",
+    "@nomicfoundation/hardhat-toolbox": "https://aistudiocdn.com/@nomicfoundation/hardhat-toolbox@^6.1.0",
+    "@nomicfoundation/hardhat-toolbox/": "https://aistudiocdn.com/@nomicfoundation/hardhat-toolbox@^6.1.0/",
+    "@nomicfoundation/hardhat-network-helpers": "https://aistudiocdn.com/@nomicfoundation/hardhat-network-helpers@^3.0.3"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
