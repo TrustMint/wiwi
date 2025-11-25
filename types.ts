@@ -235,6 +235,7 @@ export interface WalletState {
 
     // Methods
     connectWallet: () => Promise<void>;
+    connectWalletConnect: () => Promise<void>; // Added WalletConnect method
     connectWithSocial: (provider: 'google' | 'apple') => Promise<void>;
     disconnectWallet: () => void;
     updateUserLocation: (location: { country: string; region?: string; city: string; }) => void;

@@ -13,6 +13,9 @@ export default defineConfig({
         '@': path.resolve('.'),
       }
     },
+    define: {
+      global: 'globalThis',
+    },
     build: {
       sourcemap: false,
       chunkSizeWarningLimit: 1000,

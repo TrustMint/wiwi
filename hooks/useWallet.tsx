@@ -1,7 +1,11 @@
+
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { User, Badge, Transaction, TokenSymbol, TokenBalances, LoadingStates, ConnectionType, WalletState } from '../types';
 import { BrowserProvider, ethers } from 'ethers';
 import { Alchemy, Network, Utils, AssetTransfersCategory, SortingOrder } from 'alchemy-sdk';
+import { createAppKit, useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
+import { EthersAdapter } from '@reown/appkit-adapter-ethers';
+import { arbitrumSepolia } from '@reown/appkit/networks';
 
 declare global {
   interface Window {
@@ -9,7 +13,7 @@ declare global {
   }
 }
 
-// Helper to safely access environment variables in both Browser (Vite) and Node (Hardhat) environments
+// Helper to safely access environment variables in both Browser (Vite) and Node environments
 const getEnv = (key: string, defaultValue: string): string => {
   // 1. Try Vite (import.meta.env)
   try {
@@ -19,12 +23,14 @@ const getEnv = (key: string, defaultValue: string): string => {
       return import.meta.env[key];
     }
   } catch (e) {
-    // Ignore errors if import.meta is not supported
+    // Ignore errors
   }
 
-  // 2. Try Node.js (process.env)
+  // 2. Try Node.js (process.env) - SAFE CHECK
   try {
+    // @ts-ignore
     if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      // @ts-ignore
       return process.env[key] as string;
     }
   } catch (e) {
@@ -33,6 +39,36 @@ const getEnv = (key: string, defaultValue: string): string => {
 
   return defaultValue;
 };
+
+// --- AppKit Configuration ---
+// 1. Get projectId
+const projectId = '3a8170812b534d0ff9d794f19a901d64'; // Public ID for demo
+
+// 2. Create a metadata object
+const metadata = {
+  name: 'DeMarket',
+  description: 'A decentralized P2P marketplace for the CIS region',
+  url: typeof window !== 'undefined' ? window.location.origin : 'https://demarket.app', 
+  icons: ['https://avatars.githubusercontent.com/u/37784886']
+};
+
+// 3. Create the AppKit instance
+// We wrap this in a condition to prevent server-side rendering crashes if any
+if (typeof window !== 'undefined') {
+    try {
+        createAppKit({
+          adapters: [new EthersAdapter()],
+          networks: [arbitrumSepolia],
+          metadata,
+          projectId,
+          features: {
+            analytics: true 
+          }
+        });
+    } catch (e) {
+        console.error("Failed to initialize AppKit:", e);
+    }
+}
 
 // --- Configuration ---
 export const config = {
@@ -48,7 +84,6 @@ export const config = {
   MARKETPLACE_ADDRESS: getEnv('VITE_CONTRACT_MARKETPLACE', '0x3611ec20174fFa7B168Ee1FFb674AC1cdC8b250b')
 };
 
-// Using the public 'demo' key. Note: Highly rate-limited.
 const alchemy = new Alchemy({
     apiKey: "demo", 
     network: config.ALCHEMY_NETWORK,
@@ -106,6 +141,11 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
+  // AppKit Hooks
+  const { open } = useAppKit();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider('eip155');
+
   const walletAvailable = typeof window !== 'undefined' && !!window.ethereum;
   const isMounted = useRef(true);
 
@@ -148,12 +188,46 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
+  // --- Sync AppKit State with Local State ---
+  useEffect(() => {
+    const syncAppKit = async () => {
+      if (isAppKitConnected && appKitAddress && walletProvider) {
+        try {
+          const ethersProvider = new BrowserProvider(walletProvider as any, 'any');
+          setProvider(ethersProvider);
+          
+          let restoredLocation;
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+             try {
+                 const session = JSON.parse(stored);
+                 if (session.address.toLowerCase() === appKitAddress.toLowerCase()) {
+                     restoredLocation = session.location;
+                 }
+             } catch (e) {}
+          }
+
+          const connectedUser = createUserObject(appKitAddress, 'eoa', undefined, restoredLocation);
+          setUser(connectedUser);
+          setConnectionType('eoa');
+          saveSession(connectedUser, 'eoa');
+          setLoadingState('connection', false);
+        } catch (e) {
+          console.error("Error syncing AppKit state:", e);
+        }
+      }
+    };
+    syncAppKit();
+  }, [isAppKitConnected, appKitAddress, walletProvider, createUserObject]);
+
   useEffect(() => {
       const restoreSession = async () => {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
               try {
                   const session: StoredSession = JSON.parse(stored);
+                  if (isAppKitConnected) return; // AppKit handles restoration
+
                   if (session.connectionType === 'eoa' && window.ethereum) {
                       const browserProvider = new BrowserProvider(window.ethereum, 'any');
                       const accounts = await browserProvider.listAccounts();
@@ -162,8 +236,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                           const restoredUser = createUserObject(session.address, 'eoa', undefined, session.location);
                           setUser(restoredUser);
                           setConnectionType('eoa');
-                      } else {
-                          localStorage.removeItem(STORAGE_KEY);
                       }
                   } else if (session.connectionType === 'sca') {
                       const restoredUser = createUserObject(session.address, 'sca', session.email, session.location);
@@ -171,7 +243,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                       setConnectionType('sca');
                   }
               } catch (e) {
-                  console.error("Failed to restore session:", e);
                   localStorage.removeItem(STORAGE_KEY);
               }
           }
@@ -179,7 +250,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       restoreSession();
-  }, [createUserObject, setLoadingState]);
+  }, [createUserObject, setLoadingState, isAppKitConnected]);
 
   const saveSession = useCallback((user: User, type: ConnectionType, email?: string) => {
       const session: StoredSession = {
@@ -193,7 +264,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const clearError = useCallback(() => setError(null), []);
 
-  const disconnectWallet = useCallback(() => {
+  const disconnectWallet = useCallback(async () => {
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
     setProvider(null);
@@ -204,6 +275,13 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setTokenBalances({ USDC: '0', USDT: '0', DMT: '0' });
     setTotalBalanceUSD(0);
     setTransactions([]);
+    
+    try {
+        const { disconnect } = useAppKit();
+        await disconnect(); 
+    } catch(e) {
+        // ignore
+    }
   }, []);
 
   const fetchBalances = useCallback(async (userAddress: string) => {
@@ -213,7 +291,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         try {
             const ethBalanceWei = await publicArbitrumProvider.getBalance(userAddress);
             ethBalance = ethers.formatEther(ethBalanceWei);
-        } catch (e) { console.warn("Failed to fetch ETH balance", e); }
+        } catch (e) { }
 
         const newBalances: TokenBalances = { USDC: '0', USDT: '0', DMT: '0' };
         const ETH_PRICE_USD = 3500;
@@ -231,7 +309,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 newBalances[tokenSymbol] = formattedBalance;
                 if (tokenSymbol === 'USDC' || tokenSymbol === 'USDT') totalUSD += parseFloat(formattedBalance);
                 else if (tokenSymbol === 'DMT') totalUSD += parseFloat(formattedBalance) * DMT_PRICE_USD;
-            } catch (tokenErr) { /* ignore */ }
+            } catch (tokenErr) { }
         }
         
         if (isMounted.current) {
@@ -239,7 +317,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setTokenBalances(newBalances);
             setTotalBalanceUSD(totalUSD);
         }
-    } catch (err) { console.error("Critical failure in fetchBalances:", err); } 
+    } catch (err) { console.error("Error fetching balances:", err); } 
     finally { if (isMounted.current) setIsBalanceLoading(false); }
   }, []);
 
@@ -319,6 +397,16 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally { setLoadingState('connection', false); }
   }, [walletAvailable, disconnectWallet, setLoadingState, createUserObject, saveSession]);
   
+  const connectWalletConnect = useCallback(async () => {
+      setLoadingState('connection', true);
+      try {
+          await open(); 
+      } catch (err) {
+          console.error("WalletConnect open error:", err);
+          setLoadingState('connection', false);
+      }
+  }, [open]);
+
   const connectWithSocial = useCallback(async (socialProvider: 'google' | 'apple') => {
     setLoadingState('connection', true);
     setError(null);
@@ -395,9 +483,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 const session = JSON.parse(stored);
                 session.location = location;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-            } catch (e) {
-                console.error("Failed to persist location update", e);
-            }
+            } catch (e) { }
         }
         return updatedUser;
     });
@@ -442,6 +528,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     transactions,
     isHistoryLoading,
     connectWallet,
+    connectWalletConnect,
     connectWithSocial,
     disconnectWallet,
     updateUserLocation,

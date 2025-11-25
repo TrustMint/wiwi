@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useWallet } from '../../hooks/useWallet';
 import { GlassPanel } from '../shared/GlassPanel';
@@ -30,7 +31,7 @@ const SocialLoginButton: React.FC<{ icon: React.ReactNode; name: string; onClick
 );
 
 const InnerContent: React.FC = () => {
-    const { connectWallet, connectWithSocial, isLoading, walletAvailable } = useWallet();
+    const { connectWallet, connectWalletConnect, connectWithSocial, isLoading, walletAvailable } = useWallet();
 
     const WalletNotFoundMessage = () => (
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg w-full flex flex-col items-center gap-2">
@@ -66,7 +67,7 @@ const InnerContent: React.FC = () => {
                 <div className="w-full space-y-3">
                     <WalletButton icon="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" name="MetaMask" onClick={connectWallet} disabled={isLoading} />
                     <WalletButton icon="https://www.okx.com/static/media/okx-wallet.e525285b.svg" name="OKX Wallet" onClick={connectWallet} disabled={isLoading} />
-                    <WalletButton icon="https://seeklogo.com/images/W/walletconnect-logo-EE82B50C97-seeklogo.com.png" name="WalletConnect" onClick={() => alert('WalletConnect integration is planned.')} disabled={isLoading} />
+                    <WalletButton icon="https://seeklogo.com/images/W/walletconnect-logo-EE82B50C97-seeklogo.com.png" name="WalletConnect" onClick={connectWalletConnect} disabled={isLoading} />
                 </div>
             ) : (
                 <WalletNotFoundMessage />

@@ -26,7 +26,10 @@
     "@openzeppelin/contracts": "^5.0.2",
     "dotenv": "^16.4.5",
     "@apollo/client": "^3.10.4",
-    "graphql": "^16.8.1"
+    "graphql": "^16.8.1",
+    "@reown/appkit": "^1.8.14",
+    "@reown/appkit-adapter-ethers": "^1.8.14",
+    "buffer": "^6.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

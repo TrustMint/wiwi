@@ -1,7 +1,14 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { Buffer } from 'buffer';
+
+// --- Polyfills for Web3 Libraries ---
+if (typeof window !== 'undefined') {
+  (window as any).Buffer = (window as any).Buffer || Buffer;
+  (window as any).global = (window as any).global || window;
+  (window as any).process = (window as any).process || { env: {} };
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
